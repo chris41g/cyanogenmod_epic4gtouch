@@ -1,0 +1,86 @@
+Ok, Let's build CyanogenMod for the Epic 4G Touch.
+
+This guide is for Debian or Ubuntu based distros. Works fine for Mint as well.
+
+First, we need to setup a local repo for java6 since its no longer in debian or ubuntus repos..
+
+Setting up a Local Java Repo:
+
+	cd ~/
+	wget https://github.com/flexiondotorg/oab-java6/raw/0.2.4/oab-java.sh -O oab-java.sh
+	chmod +x oab-java.sh
+	sudo ./oab-java.sh
+ 
+ 
+Install the Build Packages using the package manager:
+
+For 32-bit & 64-bit systems: 
+
+	sudo apt-get install git-core gnupg flex bison gperf libsdl1.2-dev libesd0-dev libwxgtk2.6-dev squashfs-tools build-essential zip curl libncurses5-dev zlib1g-dev sun-java6-jdk pngcrush schedtool
+
+Also for 64-bit systems:
+
+	sudo apt-get install g++-multilib lib32z1-dev lib32ncurses5-dev lib32readline5-dev gcc-4.3-multilib g++-4.3-multilib
+
+
+
+Create the Directories:
+
+You will need to set up some directories in your build environment.
+
+To create them:
+
+    mkdir -p ~/bin 
+    mkdir -p ~/android/system 
+
+Install the Repository
+
+Enter the following to download make executable the "repo" binary:
+
+    curl https://dl-ssl.google.com/dl/googlesource/git-repo/repo > ~/bin/repo 
+    chmod a+x ~/bin/repo
+
+Now enter the following to initialize the repository:
+
+    cd ~/android/system/ 
+	repo init -u https://github.com/chris41g/cyanogenmod_epic4gtouch.git -b ics
+
+*	repo sync -j$  (where $ is the number of download threads you want to use)
+	
+When that completes (it will take a while, yes everything takes a while) you need to download some pre-builts.
+
+	vendor/cm/get-prebuilts
+	
+Now we want to apply any device specific patches that haven't merged upstream.. Darchstar has a script to do that.
+
+	e4gttools/apply.sh
+	
+Now let's specify what we are going to build.. (Don't forget the . at the begining)
+
+	. build/envsetup.sh && breakfast cm_epic4gtouch-userdebug
+	
+Ready to start building?
+
+	export THREADS=$(expr 1 + $(grep processor /proc/cpuinfo | wc -l))
+    export USE_CCACHE=1
+    make -j -l$THREADS bacon
+    
+When that's done (yes.. it takes a while..) you will have some files in out/target/product/epic4gtouch/ :
+	cm-9-XXXXXXX-UNOFFICIAL-epic4gtouch.zip (Where XXXXXX is the date) is the flashable build.
+	boot.img is the flashable kernel img.
+	
+Cleanup:
+
+Now you need to cleanup for your next build, this erases all your builds.. so if you haven't copied them out of that folder, now is a good time.
+
+	make clobber
+	make installclean
+	
+Next build:
+
+Next time you get ready for a build, you need to make sure you get any upstream changes..
+
+To do that, just go back to the step I left an asteriks by and continue from there, everytime you want to make a build.
+
+	*	repo sync -j$  (where $ is the number of download threads you want to use)
+	
